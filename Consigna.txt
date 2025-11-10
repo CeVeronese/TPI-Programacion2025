@@ -1,0 +1,54 @@
+Desarrollar un programa funcional que responda a una necesidad real o interés del grupo, aplicando los conocimientos adquiridos durante el cuatrimestre. El proyecto debe reflejar la comprensión e integración de los conceptos fundamentales de la materia.
+Cada grupo deberá identificar una necesidad concreta y diseñar un programa que brinde una solución práctica a esa problemática.
+Algunos ejemplos posibles (solo a modo orientativo):
+
+Recordatorio de parciales o trabajos prácticos.
+
+Asistente o chatbot para responder preguntas frecuentes.
+
+Programa que indique qué colectivo tomar hasta la facultad.
+
+Sistema de registro o control simple (de gastos, asistencia, notas, etc.).
+
+El trabajo deberá incluir, como mínimo, los siguientes elementos vistos en clase:
+
+Control de Versiones
+
+Entrada y salida de datos.
+
+Estructuras secuenciales, condicionales y repetitivas.
+
+Uso de funciones.
+
+Manejo básico de estructuras de datos (listas, tuplas o diccionarios, según corresponda).
+
+Organización del código y uso de comentarios.
+
+Validaciones y control de errores.
+
+Manejo de Archivos
+Cada grupo deberá justificar el uso de los elementos . Por ejemplo:
+
+“Utilizamos un ciclo while porque necesitábamos repetir la acción hasta que el usuario ingrese una opción válida, en lugar de un for que requiere un número fijo de repeticiones.” (Acompañado de la captura de pantalla donde se utilizó)
+
+El trabajo lo deberán subir cada uno de los integrantes del grupo :
+Documento PDF 
+El archivo debe incluir:
+
+Portada con nombre del proyecto, integrantes del grupo.
+
+Descripción del problema o necesidad detectada.
+
+Explicación de la solución propuesta (qué hace el programa, a quién está dirigido y por qué se eligió esa idea).
+
+Capturas de pantalla del código, indicando claramente:
+
+Dónde se aplicaron los conceptos vistos en clase
+
+Conclusiones del grupo (qué aprendieron, dificultades encontradas, posibles mejoras).
+
+Justificación si se incorporaron elementos o librerías no vistas en clase.
+
+Link al repositorio del proyecto (por ejemplo, GitHub o GitLab), donde todos los integrantes deben tener commits registrados.
+
+Link a un video (máximo 5 minutos) mostrando el programa en funcionamiento y una breve explicación de cómo se usa.
