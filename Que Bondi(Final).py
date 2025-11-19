@@ -1,70 +1,89 @@
 import folium
 import requests
-def pedir_hora_valida():
-    hora = input("\n🕒 Ingrese la hora a la que quiere llegar a la UTN (ej: 12:30) 🕒: ")
-    while len(hora) != 5:
-        print("\n❌ Error: Formato de hora inválido (ej: 12:30). Intente de nuevo. 🤗\n")
-        hora = input("\n🕒 Ingrese la hora a la que quiere llegar a la UTN (ej: 12:30) 🕒: ")
-    return hora
-def generar_y_guardar_mapa(origen, destino, parada_num, nombre_linea, color_ruta, color_marker):
-    print(f"\n🗺️ Generando mapa de recorrido para línea {nombre_linea}...")
-    ruta = obtener_ruta_osrm(origen, destino)
-    if ruta is None:
-        ruta = [origen, destino]
-        print("\n⚠️ No se pudo obtener ruta por calles (OSRM). Se dibuja línea recta como fallback.")
-    mapa = folium.Map(location=origen, zoom_start=14)
-    folium.Marker(origen, popup="Tu parada", icon=folium.Icon(color=color_marker)).add_to(mapa)
-    folium.Marker(destino, popup="UTN", icon=folium.Icon(color="blue")).add_to(mapa)
-    folium.PolyLine(ruta, weight=4, color=color_ruta).add_to(mapa)
-
-    nombre_archivo = f"recorrido_{nombre_linea}_parada_{parada_num}.html"
-    mapa.save(nombre_archivo)
-    print(f"\n➡️ Mapa guardado como: {nombre_archivo}\n")
-def pedir_parada_valida(paradas_dict):
-    while True:
-        parada = input("📍 Ingrese la parada de colectivo más cercana (1-8): ")
-        if parada in paradas_dict:
-            return parada
-        else:
-            print("\n❌ Error: Parada no válida. Intente de nuevo. 🤗")
-def validar_parada_encontrada(lista_encontrados):
-    parada_ingresada = input("\n📍 Ingrese el número de parada que desea usar: ")
-    parada_valida = False
-    while parada_valida == False:
-        for elemento in lista_encontrados:
-            if parada_ingresada == str(elemento[0]): 
-                parada_valida = True
-                break
-        if parada_valida == False:
-            print("❌ Error: Parada no válida. 🤗")
-            parada_ingresada = input("📍 Ingrese el número de parada: ")
-    return parada_ingresada
 def imprimir_lista_paradas(titulo, lista_calles, icono):
+    "Procedimiento que muestra una lista de la ubicacion(calles) de las paradas"
     print(f"\n{icono} {titulo}:")
     for i in range(len(lista_calles)):
-        print(f"  {i+1}. {lista_calles[i]}")
-def mostrar_horarios_validos(paradas_dict, parada_ingresada, hora_llegada):
-    horarios_parada = paradas_dict[parada_ingresada]
-    horarios_validos = []
-    hora_llegada_limpia = hora_llegada.strip()
+        print(f"  {i+1}. {lista_calles[i]}") # sumamos 1 al indice pora mostrar del 1 al 8
 
-    for hora in horarios_parada:
-        hora_limpia = hora.strip()
-        
-        if hora_limpia < hora_llegada_limpia:
-            horarios_validos.append(hora_limpia)
-    
-    for hora_valida in horarios_validos:
-        print(hora_valida)
+def seleccionar_parada_general(diccionario_paradas):
+    "Funcion que pide una parada de colectivo cercana y comprueba si la eleccion es valida"
+    parada_valida = False
+    parada = ""
+    while parada_valida == False: # si ingresa una parada no valida se pide de vuelta 
+        parada = input("📍 Ingrese la parada de colectivo más cercana (1-8): ")
+        if parada in diccionario_paradas:
+            parada_valida = True
+        else:
+            print("\n❌ Error: Parada no válida. Intente de nuevo. 🤗")
+    return parada
+
 def buscarCalles(paradas_calles, calle_usuario):
+    "Funcion que guarda la calle ingresada y busca esa calle en todo el diccionario"
+    "Si encuentra una parada correspondiente la guarda, para luego imprimirla"
     encontrados = []
     calle_minuscula = calle_usuario.lower()
     for i in range(len(paradas_calles)):
         parada_minuscula = paradas_calles[i].lower()
-        if calle_minuscula in parada_minuscula:
+        if calle_minuscula in parada_minuscula: # comprueba si la cadena esta dentro de alguna parada
             encontrados.append((i+1, paradas_calles[i]))
     return encontrados
+
+def seleccionar_parada_de_busqueda(resultados_busqueda):
+    "Funcion que permite al usuario puede elegir las paradas encontradas, no se mostraran"
+    "las que no tienen coincidencia en la busqueda de la calle"
+    parada_ingresada = input("\n📍 Ingrese el número de parada que desea usar: ")
+    parada_valida = False
+    while parada_valida == False:
+        for resultado in resultados_busqueda: # si el numero de la parada coincide con las paradas guardadas
+            if parada_ingresada == str(resultado[0]): 
+                parada_valida = True
+                break
+        if parada_valida == False:
+            print("❌ Error: Parada no válida. 🤗")
+            parada_ingresada = input("📍 Ingrese el número de parada que desea usar: ")
+    return parada_ingresada
+
+def pedir_hora_valida():
+    "Funcion que pide la hora deseada por el usuario para llegar al destino "
+    "y comprueba que tiene formato (HH:MM)"
+    hora_valida = False
+    hora = ""
+    while hora_valida == False:
+        hora = input("\n🕒 Ingrese la hora a la que quiere llegar a la UTN (ej: 12:30) 🕒: ")
+        if len(hora) != 5 or hora[2] != ":":
+            print("\n❌ Error: Hora inexistente. Ingrese una hora real entre 00:00 y 23:59\n")
+        else:
+            txtHS = hora[0]+hora[1]   # se guardan la hora y minutos de la cadena
+            txtMIN = hora[3]+hora[4]
+            try:
+                hs = int(txtHS)
+                mins = int(txtMIN)
+                if hs < 0 or hs > 23 or mins < 0 or mins > 59:  # se comprueba que sea una hora real
+                    print("\n❌ Error: Hora inexistente. Ingrese una hora real entre 00:00 y 23:59.\n")
+                else:
+                    hora_valida = True
+            except ValueError:
+                print("\n❌ Error: Hora inexistente. Ingrese una hora real entre 00:00 y 23:59.\n")
+    return hora
+
+def mostrar_horarios_validos(diccionario_paradas, parada_ingresada, hora_llegada):
+    "Funcion que guarda y muestra horarios anteriores a la hora deseada por el usuario"
+    horarios_parada = diccionario_paradas[parada_ingresada]
+    horarios_validos = []
+    for hora in horarios_parada:
+        if hora < hora_llegada:
+            horarios_validos.append(hora)
+    if len(horarios_validos) == 0:
+        print("⚠️ No hay horarios disponibles antes de esa hora.")
+        return False # si no hay horarios de colectivo antes de la hora deseada se imprime este mensaje
+    else:
+        for hora_valida in horarios_validos:
+            print(hora_valida)
+        return True
+
 def obtener_ruta_osrm(origen, destino, profile='driving'):
+    "Funcion que se encarga de obtener el recorrido optimo desde el origen hasta el destino"
     lon1, lat1 = origen[1], origen[0]
     lon2, lat2 = destino[1], destino[0]
     url = f"http://router.project-osrm.org/route/v1/{profile}/{lon1},{lat1};{lon2},{lat2}?overview=full&geometries=geojson"
@@ -78,6 +97,23 @@ def obtener_ruta_osrm(origen, destino, profile='driving'):
     except Exception as e:
         return None
 
+def generar_y_guardar_mapa(origen, destino, parada_num, nombre_linea, color_ruta, color_marker):
+    "Procedimiento que genera un mapa interactivo en el que se visualiza el recorrido, origen y destino"
+    print(f"\n🗺️ Generando mapa de recorrido para línea {nombre_linea}...")
+    ruta = obtener_ruta_osrm(origen, destino)
+    if ruta is None:
+        ruta = [origen, destino]
+        print("\n⚠️ No se pudo obtener ruta por calles (OSRM). Se dibuja línea recta como fallback.")
+    mapa = folium.Map(location=origen, zoom_start=14)
+    folium.Marker(origen, popup="Tu parada", icon=folium.Icon(color=color_marker)).add_to(mapa)
+    folium.Marker(destino, popup="UTN", icon=folium.Icon(color="blue")).add_to(mapa)
+    folium.PolyLine(ruta, weight=4, color=color_ruta).add_to(mapa)
+
+    nombre_archivo = f"recorrido_{nombre_linea}_parada_{parada_num}.html"
+    mapa.save(nombre_archivo)
+    print(f"\n➡️ Mapa guardado como: {nombre_archivo}\n")
+
+# Coordenadas [Latitud, Longitud]
 coords_paradas_16 = {
     '1': [-32.40936504659292, -63.2471015620622],
     '2': [-32.41556158412005, -63.24016165776168],
@@ -99,7 +135,7 @@ coords_paradas_16B = {
     '8': [-32.398204191708956, -63.24765747893508]
 }
 utn_coords = [-32.409771241180664, -63.21655973021679]
-
+# Horarios de cada parada
 paradas_16 = {
     '1': ["06:15", "07:00", "07:45", "08:30", "09:15", "10:15", "11:00", "11:45","12:30", "13:15", "14:00", "14:45", "15:30", "16:15", "17:00", "18:00","18:45", "19:30", "20:15", "21:00"],
     '2': ["06:20", "07:05", "07:50", "08:35", "09:20", "10:20", "11:05", "11:50","12:35", "13:20", "14:05", "14:50", "15:35", "16:20", "17:05", "18:05", "18:50", "19:35", "20:20", "21:20"],
@@ -120,7 +156,7 @@ paradas_16B = {
     '7': ["08:05", "09:05", "10:05", "11:05", "12:05", "13:05", "14:05", "15:05", "16:05", "17:05", "18:05", "19:05","20:05", "21:05", "22:05"],
     '8': ["08:10", "09:10", "10:10", "11:10", "12:10", "13:10", "14:10", "15:10", "16:10", "17:10", "18:10", "19:10", "20:10", "21:10", "22:10"],
 }
-
+# Nombres de las calles
 paradas_16_calles = [
     "Centro de Transferencias",
     "Av. Irigoyen / San Luis",
@@ -141,7 +177,7 @@ paradas_16B_calles = [
     "Jauretche / Bv España (UNVM)",
     "Rawson / Bv España"
 ]
-
+# Ciclo principal
 mostrar_menuPrincipal = True
 while mostrar_menuPrincipal == True:
     print(
@@ -180,17 +216,16 @@ while mostrar_menuPrincipal == True:
                 except ValueError:
                     print("\n❌ Error: Opción no válida. Intente de nuevo. 🤗")
                     continue
-                    
+                    # se comprueba que la opcion de busqueda ingresada sea valida
                 while busqueda != 1 and busqueda != 2 and busqueda != 3:
                     print("\n❌ Error: Opción no válida. Intente de nuevo. 🤗")
                     busqueda = int(input("👉🏽 Elija una opción: "))
 
                 match busqueda:
                     case 1:
-                        print("\n🚌 𝐋𝐢𝐧𝐞𝐚𝐬 𝐃𝐢𝐬𝐩𝐨𝐧𝐢𝐛𝐥𝐞𝐬 🚌 \n🧡 16 / 🩶 16B\n")
-                        
+                        print("\n🚌 𝐋𝐢𝐧𝐞𝐚𝐬 𝐃𝐢𝐬𝐩𝐨𝐧𝐢𝐛𝐥𝐞𝐬 🚌 \n🧡 16 / 🩶 16B\n")  
                         linea = input("\n👉🏽 Ingrese la línea que desea tomar (16/16B): ")
-                        while linea != "16" and linea != "16B":
+                        while linea != "16" and linea != "16B": # validacion simple para la linea
                             print("\n❌ Error: Línea no válida. Intente de nuevo. 🤗\n")
                             linea = input("👉🏽 Ingrese la línea que desea tomar (16/16B): ")
                             
@@ -206,14 +241,17 @@ while mostrar_menuPrincipal == True:
                                 "7️⃣  Bv. Alvear / San Luis\n"
                                 "8️⃣  Lisandro de la Torre / Bs. As.\n"
                             )
-                            parada_ingresada = pedir_parada_valida(paradas_16)
-                                
+                            # se valida la parada ingresada, la hora, y si existen horarios
+                            parada_ingresada = seleccionar_parada_general(paradas_16)
                             hora_llegada = pedir_hora_valida()
-                                    
                             print(f"\nHorarios disponibles antes de las {hora_llegada}: ")
-   
-                            origen = coords_paradas_16[parada_ingresada]
-                            generar_y_guardar_mapa(origen, utn_coords, parada_ingresada, "16", "red", "orange")
+                            hay_horarios = mostrar_horarios_validos(paradas_16, parada_ingresada, hora_llegada)
+                            if hay_horarios == True:
+                                # se buscan las coordenadas correctas para el mapa
+                                origen = coords_paradas_16[parada_ingresada]
+                                generar_y_guardar_mapa(origen, utn_coords, parada_ingresada, "16", "red", "orange")
+                            else:
+                                print("\n❌ No se generó el mapa porque no hay horarios disponibles.")
 
                             salida = input("\n👉🏽 Ingrese 0 para finalizar ")
                             if salida == '0':
@@ -234,15 +272,15 @@ while mostrar_menuPrincipal == True:
                                 "7️⃣ Jauretche / Bv España (UNVM)\n"
                                 "8️⃣ Rawson / Bv España\n"
                             )
-                            parada_ingresada = pedir_parada_valida(paradas_16B)
-
+                            parada_ingresada = seleccionar_parada_general(paradas_16B)
                             hora_llegada = pedir_hora_valida()
- 
                             print(f"\nHorarios disponibles antes de las {hora_llegada}: ")
-                            mostrar_horarios_validos(paradas_16B, parada_ingresada, hora_llegada)
-
-                            origen = coords_paradas_16B[parada_ingresada]
-                            generar_y_guardar_mapa(origen, utn_coords, parada_ingresada, "16B", "purple", "gray")
+                            hay_horarios = mostrar_horarios_validos(paradas_16, parada_ingresada, hora_llegada)
+                            if hay_horarios == True:
+                                origen = coords_paradas_16B[parada_ingresada]
+                                generar_y_guardar_mapa(origen, utn_coords, parada_ingresada, "16B", "purple", "gray")
+                            else:
+                                print("\n❌ No se generó el mapa porque no hay horarios disponibles.")
 
                             salida = input("\n👉🏽 Ingrese 0 para finalizar ")
                             if salida == '0':
@@ -251,69 +289,72 @@ while mostrar_menuPrincipal == True:
                                 mostrar_menuPrincipal = False
 
                     case 2:
-                        repetir_calle = True
+                        repetir_calle = True # 
                         while repetir_calle == True:
                             calle_usuario = input("\n👉🏽 Ingrese el nombre de la calle donde se encuentra: ")
                             while calle_usuario.strip() == "":
                                 print("\n❌ Error: Calle no válida. Intente de nuevo. 🤗")
                                 calle_usuario = input("\n👉🏽 Ingrese el nombre de la calle donde se encuentra: ")
-
+                            # Se busca alguna calle igual dentro de las paradas de ambas lineas
                             encontrados_16 = buscarCalles(paradas_16_calles, calle_usuario)
                             encontrados_16B = buscarCalles(paradas_16B_calles, calle_usuario)
-
+                            # Si hay paradas en esa calle se muestran y su linea correspondiente
                             if len(encontrados_16) > 0:
                                 print("\n🧡 En la línea 16:")
                                 for numero, calles in encontrados_16:
                                     print(f"  {numero}. {calles}")
-
                             if len(encontrados_16B) > 0:
                                 print("\n🩶 En la línea 16B:")
                                 for numero, calles in encontrados_16B:
                                     print(f"  {numero}. {calles}")
-
                             if len(encontrados_16) == 0 and len(encontrados_16B) == 0:
                                 print(f"\n❌ No se encontró la calle '{calle_usuario}' en ninguna línea")
-                                print("\n📍 Paradas disponibles:")
+                                print("\n📍 Paradas disponibles:") # si no se encuentra la calle se muestran ambas lineas
                                 imprimir_lista_paradas("Línea 16", paradas_16_calles, "🧡")
                                 imprimir_lista_paradas("Línea 16B", paradas_16B_calles, "🩶")
                                 continue
                                 
-
-                            repetir_calle = False
-
-                        linea = input("\n👉🏽 ¿Qué línea desea tomar? (16/16B): ")
-                        while not ((linea == "16" and len(encontrados_16) > 0) or (linea == "16B" and len(encontrados_16B) > 0)):
-                            print("❌ Error: Línea no válida o sin paradas disponibles. Intente de nuevo. 🤗")
-                            linea = input("👉🏽 ¿Qué línea desea tomar? (16/16B): ")
+                            repetir_calle = False # se haya encontrado o no la calle, este ciclo se termina
+                        
+                        # se pregunta que linea va a tomar y se comprueba que todas las entradas sean validas
+                        linea_valida = False
+                        while linea_valida == False:
+                            linea = input("\n👉🏽 ¿Qué línea desea tomar? (16/16B): ")
+                            if linea == "16" and len(encontrados_16) > 0:
+                                linea_valida = True
+                            elif linea == "16B" and len(encontrados_16B) > 0:
+                                    linea_valida = True
+                            else:
+                                print("❌ Error: Línea no válida o sin paradas disponibles. Intente de nuevo. 🤗")
 
                         if linea == "16":
-                            parada_ingresada = validar_parada_encontrada(encontrados_16)
-                            
+                            parada_ingresada = seleccionar_parada_de_busqueda(encontrados_16)
                             hora_llegada = pedir_hora_valida()
-
                             print(f"\nHorarios disponibles antes de las {hora_llegada}: ")
-                            mostrar_horarios_validos(paradas_16, parada_ingresada, hora_llegada)
-
-                            origen = coords_paradas_16[parada_ingresada]
-                            generar_y_guardar_mapa(origen, utn_coords, parada_ingresada, "16", "red", "orange")
-
+                            hay_horarios = mostrar_horarios_validos(paradas_16, parada_ingresada, hora_llegada)
+                            if hay_horarios == True:
+                                origen = coords_paradas_16[parada_ingresada]
+                                generar_y_guardar_mapa(origen, utn_coords, parada_ingresada, "16", "red", "orange")
+                            else:
+                                print("\n❌ No se generó el mapa porque no hay horarios disponibles.")
                         else:
-                            parada_ingresada = validar_parada_encontrada(encontrados_16B)
-
+                            parada_ingresada = seleccionar_parada_de_busqueda(encontrados_16B)
                             hora_llegada = pedir_hora_valida()
-
                             print(f"\nHorarios disponibles antes de las {hora_llegada}: ")
-                            mostrar_horarios_validos(paradas_16B, parada_ingresada, hora_llegada)
-                            origen = coords_paradas_16B[parada_ingresada]
-                            generar_y_guardar_mapa(origen, utn_coords, parada_ingresada, "16B", "purple", "gray")
-
+                            hay_horarios = mostrar_horarios_validos(paradas_16B, parada_ingresada, hora_llegada)
+                            if hay_horarios == True:
+                                origen = coords_paradas_16B[parada_ingresada]
+                                generar_y_guardar_mapa(origen, utn_coords, parada_ingresada, "16B", "purple", "gray")
+                            else:
+                                print("\n❌ No se generó el mapa porque no hay horarios disponibles.")
+                        # si el usuario ingresa 0 el programa termina totalmente
                         salida = input("👉🏽 Ingrese 0 para finalizar: ")
                         if salida == '0':
                             print("\n🚫 Programa Finalizado 🚫")
                             mostrar_busqueda = False
                             mostrar_menuPrincipal = False
                     
-                    case 3:
+                    case 3: # para volver al menu principal
                         print()
                         mostrar_busqueda = False
                         break
